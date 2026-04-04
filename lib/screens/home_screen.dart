@@ -80,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   Text(
-                    "Hello, User ",
+                    "Hello ✨",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   Row(

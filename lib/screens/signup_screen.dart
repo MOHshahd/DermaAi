@@ -1,12 +1,78 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController name = TextEditingController();
   final TextEditingController phone = TextEditingController();
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> signUp() async {
+    // 🔴 Validation
+    if (email.text.isEmpty ||
+        password.text.isEmpty ||
+        name.text.isEmpty ||
+        phone.text.isEmpty) {
+      showMessage("Please fill all fields");
+      return;
+    }
+
+    if (password.text.length < 6) {
+      showMessage("Password must be at least 6 characters");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.text.trim(),
+        password: password.text.trim(),
+      );
+
+      showMessage("Account created successfully ✅");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = "This email is already registered";
+          break;
+        case 'invalid-email':
+          message = "Invalid email format";
+          break;
+        case 'weak-password':
+          message = "Password is too weak";
+          break;
+        default:
+          message = "Signup failed";
+      }
+
+      showMessage(message);
+    } catch (e) {
+      showMessage("Something went wrong");
+    }
+
+    setState(() => isLoading = false);
+  }
+
+  void showMessage(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,20 +87,14 @@ class SignUpScreen extends StatelessWidget {
       body: Padding(
         padding: EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             Text(
               "Create Account",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
             SizedBox(height: 20),
 
-            // Name
             TextField(
               controller: name,
               decoration: InputDecoration(
@@ -45,7 +105,6 @@ class SignUpScreen extends StatelessWidget {
 
             SizedBox(height: 12),
 
-            // Phone
             TextField(
               controller: phone,
               decoration: InputDecoration(
@@ -56,7 +115,6 @@ class SignUpScreen extends StatelessWidget {
 
             SizedBox(height: 12),
 
-            // Email
             TextField(
               controller: email,
               decoration: InputDecoration(
@@ -67,7 +125,6 @@ class SignUpScreen extends StatelessWidget {
 
             SizedBox(height: 12),
 
-            // Password
             TextField(
               controller: password,
               obscureText: true,
@@ -79,43 +136,28 @@ class SignUpScreen extends StatelessWidget {
 
             SizedBox(height: 24),
 
-            // SIGN UP BUTTON
+            /// 🔥 SIGN UP BUTTON
             ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoginScreen(),
-                  ),
-                );
-              },
+              onPressed: isLoading ? null : signUp,
               style: ElevatedButton.styleFrom(
                 minimumSize: Size(double.infinity, 50),
                 backgroundColor: Colors.blueGrey,
               ),
-              child: Text("SIGN UP",style: TextStyle(color: Colors.white),),
+              child: isLoading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text("SIGN UP",
+                      style: TextStyle(color: Colors.white)),
             ),
 
             SizedBox(height: 16),
 
-            // SIGN IN BUTTON
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoginScreen(),
-                    ),
-                  );
-                },
-                child: Text(
-                  "Already have an account? Sign in",
-                  style: TextStyle(
-                    color: Colors.blueGrey,
-                    fontSize: 14,
-                  ),
-                ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                "Already have an account? Sign in",
+                style: TextStyle(color: Colors.blueGrey),
               ),
             ),
           ],
