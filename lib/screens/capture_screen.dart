@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'scan_screen.dart'; // Ensure this path is correct for your project
 
 class CaptureScreen extends StatefulWidget {
   const CaptureScreen({super.key});
@@ -35,7 +34,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  // 📤 Send image to SwinV2-Base Server
+  // 📤 Send image to AI Analysis Server
   Future<void> _analyzeImage() async {
     if (_imageFile == null) return;
 
@@ -47,7 +46,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       var request = http.MultipartRequest('POST', Uri.parse(url));
       request.files.add(await http.MultipartFile.fromPath('image', _imageFile!.path));
 
-      // 30 second timeout for the 88M parameter SwinV2-Base model
+      // Standard timeout for deep analysis
       var streamedResponse = await request.send().timeout(const Duration(seconds: 30));
       var response = await http.Response.fromStream(streamedResponse);
 
@@ -55,16 +54,15 @@ class _CaptureScreenState extends State<CaptureScreen> {
         final data = jsonDecode(response.body);
         _handleServerResponse(data);
       } else {
-        _showSnackBar("Server Error: ${response.statusCode}");
+        _showSnackBar("Service busy. Please try again in a moment.");
       }
     } catch (e) {
       _showSnackBar("Connection failed. Please check your internet.");
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // Logic to handle success, invalid (chair), and low_confidence (blurry)
   void _handleServerResponse(Map<String, dynamic> data) {
     String status = data['status'];
 
@@ -85,7 +83,6 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  // Professional Results Bottom Sheet
   void _showResultSheet({
     required String title,
     String? disease,
@@ -111,7 +108,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: isError ? Colors.redAccent : primaryBlue
+                    color: isError ? Colors.orange[800] : primaryBlue
                 )
             ),
             const Divider(height: 30),
@@ -119,11 +116,11 @@ class _CaptureScreenState extends State<CaptureScreen> {
               Text("Detected Condition:", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
               const SizedBox(height: 5),
               Text(disease!, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text("AI Confidence: $confidence%", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                child: Text("AI Accuracy: $confidence%", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
               ),
             ] else ...[
               Text(message!, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
@@ -216,7 +213,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                         const SizedBox(height: 12),
                         _buildStep("Hold camera 10-15cm from skin"),
                         _buildStep("Ensure bright, natural lighting"),
-                        _buildStep("Center the lesion in the frame"),
+                        _buildStep("Center the area in the frame"),
                       ],
                     ),
                   ),
@@ -283,7 +280,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ),
           ),
 
-          // Professional Loading Overlay
+          // Professional Loading Overlay (Updated Text)
           if (_isLoading)
             Container(
               color: Colors.black.withOpacity(0.6),
@@ -298,9 +295,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
                       children: [
                         CircularProgressIndicator(color: primaryBlue),
                         const SizedBox(height: 25),
-                        const Text("SwinV2-Base Analysis", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text("AI Health Analysis", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 5),
-                        Text("Processing deep features...", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                        Text("Analyzing skin features...", style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                       ],
                     ),
                   ),

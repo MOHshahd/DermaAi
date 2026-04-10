@@ -4,8 +4,10 @@ import 'home_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -15,8 +17,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isPasswordHidden = true;
   bool isLoading = false;
 
+  // Medical Theme Colors
+  final Color primaryBlue = const Color(0xFF0056D2);
+  final Color surfaceWhite = const Color(0xFFF8FAFC);
+  final Color textDark = const Color(0xFF1E293B);
+
   Future<void> login() async {
-    // 🔴 Validation
     if (email.text.isEmpty || password.text.isEmpty) {
       showMessage("Please fill all fields");
       return;
@@ -30,39 +36,29 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password.text.trim(),
       );
 
-      // ✅ Success
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } on FirebaseAuthException catch (e) {
-      String message;
-
-      switch (e.code) {
-        case 'user-not-found':
-          message = "No account found with this email";
-          break;
-        case 'wrong-password':
-          message = "Incorrect password";
-          break;
-        case 'invalid-email':
-          message = "Invalid email format";
-          break;
-        default:
-          message = "Login failed";
-      }
+      String message = "Login failed";
+      if (e.code == 'user-not-found') message = "No account found with this email";
+      else if (e.code == 'wrong-password') message = "Incorrect password";
+      else if (e.code == 'invalid-email') message = "Invalid email format";
 
       showMessage(message);
     } catch (e) {
       showMessage("Something went wrong");
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
-
-    setState(() => isLoading = false);
   }
 
   void showMessage(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
   }
 
   Future<void> resetPassword() async {
@@ -70,11 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
       showMessage("Enter your email first");
       return;
     }
-
     try {
-      await FirebaseAuth.instance
-          .sendPasswordResetEmail(email: email.text.trim());
-
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email.text.trim());
       showMessage("Password reset email sent 📧");
     } catch (e) {
       showMessage("Failed to send reset email");
@@ -84,111 +77,148 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFDFD),
-      appBar: AppBar(
-        title: Text("Login"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Text(
-              "Welcome Back 👋",
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
+      backgroundColor: surfaceWhite,
+      body: SafeArea(
+        child: SingleChildScrollView( // 🛡️ Prevents keyboard overflow
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 60),
 
-            SizedBox(height: 10),
-
-            Text("Login to continue", style: TextStyle(color: Colors.grey)),
-
-            SizedBox(height: 30),
-
-            // Email
-            TextField(
-              controller: email,
-              decoration: InputDecoration(
-                labelText: "Email",
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-
-            SizedBox(height: 16),
-
-            // Password
-            TextField(
-              controller: password,
-              obscureText: isPasswordHidden,
-              decoration: InputDecoration(
-                labelText: "Password",
-                prefixIcon: Icon(Icons.lock),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    isPasswordHidden
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+              // App Brand/Logo Area
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      isPasswordHidden = !isPasswordHidden;
-                    });
-                  },
+                  child: Icon(Icons.health_and_safety, size: 60, color: primaryBlue),
                 ),
               ),
-            ),
 
-            SizedBox(height: 10),
+              const SizedBox(height: 30),
 
-            // 🔥 Forgot Password
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: resetPassword,
-                child: Text(
-                  "Forgot Password?",
-                  style: TextStyle(color: Colors.blueGrey),
+              Text(
+                "Welcome to DermaAI",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textDark),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Please log in to access your personalized skin health portal and AI insights.",
+                style: TextStyle(color: Colors.grey[600], fontSize: 15),
+              ),
+
+              const SizedBox(height: 40),
+
+              // Email Field
+              TextFormField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: "Email Address",
+                  prefixIcon: Icon(Icons.email_outlined, color: primaryBlue),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
                 ),
               ),
-            ),
 
-            SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // 🔥 LOGIN BUTTON
-            ElevatedButton(
-              onPressed: isLoading ? null : login,
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                backgroundColor: Colors.blueGrey,
+              // Password Field
+              TextFormField(
+                controller: password,
+                obscureText: isPasswordHidden,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  prefixIcon: Icon(Icons.lock_outline, color: primaryBlue),
+                  filled: true,
+                  fillColor: Colors.white,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isPasswordHidden ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () => setState(() => isPasswordHidden = !isPasswordHidden),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
               ),
-              child: isLoading
-                  ? CircularProgressIndicator(color: Colors.white)
-                  : Text("LOGIN", style: TextStyle(color: Colors.white)),
-            ),
 
-            SizedBox(height: 20),
-
-            // SIGN UP
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => SignUpScreen()),
-                );
-              },
-              child: Text(
-                "Don't have an account? Sign up",
-                style: TextStyle(color: Colors.blueGrey),
+              // Forgot Password
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: resetPassword,
+                  child: Text(
+                    "Forgot Password?",
+                    style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 30),
+
+              // Login Button
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    elevation: 2,
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    "LOGIN",
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Sign Up Toggle
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Don't have an account?", style: TextStyle(color: Colors.grey[600])),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                      );
+                    },
+                    child: Text(
+                      "Sign up",
+                      style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

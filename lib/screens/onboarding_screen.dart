@@ -1,61 +1,71 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';
 import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
   @override
-  _OnboardingScreenState createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int currentIndex = 0;
 
+  // Consistency Colors
+  final Color primaryBlue = const Color(0xFF0056D2);
+  final Color surfaceWhite = const Color(0xFFF8FAFC);
+  final Color textDark = const Color(0xFF1E293B);
+
   final List<Map<String, String>> onboardingData = [
     {
       "image": "assets/onboarding1.jpeg",
-      "title": "Detect Skin Diseases Early",
-      "subtitle": "Scan affected areas and get an AI-based analysis.",
+      "title": "Early AI Detection",
+      "subtitle": "Harness the power of SwinV2 Transformers to identify skin conditions in seconds.",
     },
     {
       "image": "assets/onboarding2.jpeg",
-      "title": "Monitor Your Condition",
-      "subtitle": "Track your condition step by step.",
+      "title": "Progress Monitoring",
+      "subtitle": "Track your healing journey with our smart visual logging system.",
     },
     {
       "image": "assets/onboarding3.jpeg",
-      "title": "Consult Dermatologists",
-      "subtitle": "Connect with certified dermatologists.",
+      "title": "Expert Consultation",
+      "subtitle": "Connect with top dermatologists for professional medical advice and care.",
     },
   ];
 
-  void nextPage() {
+  void _onGetStarted() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
+  void _nextPage() {
     if (currentIndex < onboardingData.length - 1) {
       _controller.nextPage(
-        duration: Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOutCubic,
       );
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      _onGetStarted();
     }
   }
 
-  Widget buildDots() {
+  Widget _buildDots() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         onboardingData.length,
-        (index) => AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          width: currentIndex == index ? 20 : 8,
+            (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: currentIndex == index ? 24 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: currentIndex == index ? Colors.blueGrey : Colors.grey,
-            borderRadius: BorderRadius.circular(4),
+            color: currentIndex == index ? primaryBlue : Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
       ),
@@ -65,37 +75,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFDFD),
+      backgroundColor: surfaceWhite,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: _onGetStarted,
+            child: Text(
+              "Skip",
+              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 15),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
+            flex: 3,
             child: PageView.builder(
               controller: _controller,
               itemCount: onboardingData.length,
               onPageChanged: (index) => setState(() => currentIndex = index),
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: Image.asset(onboardingData[index]["image"]!),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(30),
+                            child: Image.asset(
+                              onboardingData[index]["image"]!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 30),
                       Text(
                         onboardingData[index]["title"]!,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
                         textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: textDark,
+                        ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 15),
                       Text(
                         onboardingData[index]["subtitle"]!,
-                        style: TextStyle(color: Colors.grey),
                         textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          height: 1.5,
+                        ),
                       ),
                     ],
                   ),
@@ -103,19 +143,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
             ),
           ),
-          buildDots(),
-          SizedBox(height: 20),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: ElevatedButton(
-              onPressed: nextPage,
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50),
-                backgroundColor: Colors.blueGrey,
-              ),
-              child: Text(currentIndex == 2 ? "Get Started" : "Next",style: TextStyle(color: Colors.white)),)
+
+          Expanded(
+            flex: 1,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildDots(),
+                const SizedBox(height: 40),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: _nextPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: Text(
+                        currentIndex == 2 ? "Get Started" : "Next",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          SizedBox(height: 40),
+          ),
         ],
       ),
     );
