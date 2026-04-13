@@ -6,6 +6,7 @@ import 'doctor_details.dart';
 import 'chatbotScreen.dart';
 import 'profile_screen.dart';
 import 'doctor_data.dart';
+import 'doctors_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,13 +16,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Styling
   final Color primaryBlue = const Color(0xFF0056D2);
   final Color surfaceWhite = const Color(0xFFF8FAFC);
   final Color textDark = const Color(0xFF1E293B);
 
+  // State & Logic
   int _currentIndex = 0;
   final User? user = FirebaseAuth.instance.currentUser;
-
   final TextEditingController _homeSearchController = TextEditingController();
   final FocusNode _homeFocusNode = FocusNode();
   List<Doctor> _searchResults = [];
@@ -55,75 +57,102 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: surfaceWhite,
         body: SafeArea(
-          child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                _buildHeader(),
-                const SizedBox(height: 25),
-
-                Column(
-                  children: [
-                    _buildSearchBar(),
-                    if (_homeSearchController.text.isNotEmpty) _buildSearchDropdown(),
-                  ],
-                ),
-
-                const SizedBox(height: 25),
-                _buildHeroCard(context),
-                const SizedBox(height: 30),
-                Text("Our Services", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark)),
-                const SizedBox(height: 15),
-                _buildServiceGrid(context),
-                const SizedBox(height: 30),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Top Specialists", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark)),
-                    TextButton(
-                        onPressed: () {
-                          _homeFocusNode.unfocus();
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorsListScreen()));
-                        },
-                        child: Text("See All", style: TextStyle(color: primaryBlue))
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                _buildDoctorCard(context, allDoctors[0]),
-                _buildDoctorCard(context, allDoctors[1]),
-
-                const SizedBox(height: 20),
-              ],
-            ),
+          child: IndexedStack(
+            index: _currentIndex,
+            children: [
+              _buildHomeContent(),
+              const Center(child: Text("Bookings Screen", style: TextStyle(color: Colors.grey))),
+              const Center(child: Text("History Screen", style: TextStyle(color: Colors.grey))),
+            ],
           ),
         ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedItemColor: primaryBlue,
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          onTap: (index) {
-            _homeFocusNode.unfocus();
-            if (index == 3) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            } else {
+        // ✅ Elegant "Hairline" Bottom Navigation
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              top: BorderSide(color: Colors.grey.shade200, width: 1), // Crisp hairline separator
+            ),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            selectedItemColor: primaryBlue,
+            unselectedItemColor: Colors.grey.shade400,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            showUnselectedLabels: true,
+            elevation: 0, // Removed heavy shadow for elegance
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent, // Uses container color
+            onTap: (index) {
+              _homeFocusNode.unfocus();
               setState(() => _currentIndex = index);
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: "Bookings"),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          ],
+            },
+            items: [
+              _buildNavItem(Icons.home_filled, Icons.home_outlined, "Home", 0),
+              _buildNavItem(Icons.calendar_today, Icons.calendar_today_outlined, "Bookings", 1),
+              _buildNavItem(Icons.history, Icons.history_toggle_off, "History", 2),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  // ✅ Helper for "Soft-Touch" Active Icons
+  BottomNavigationBarItem _buildNavItem(IconData activeIcon, IconData inactiveIcon, String label, int index) {
+    bool isActive = _currentIndex == index;
+    return BottomNavigationBarItem(
+      icon: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Icon(isActive ? activeIcon : inactiveIcon, size: 24),
+      ),
+      label: label,
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          _buildHeader(),
+          const SizedBox(height: 25),
+          _buildSearchBar(),
+          if (_homeSearchController.text.isNotEmpty) _buildSearchDropdown(),
+          const SizedBox(height: 25),
+          _buildHeroCard(context),
+          const SizedBox(height: 30),
+          Text("Our Services", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark)),
+          const SizedBox(height: 15),
+          _buildServiceGrid(context),
+          const SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Top Specialists", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textDark)),
+              TextButton(
+                  onPressed: () {
+                    _homeFocusNode.unfocus();
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const DoctorsListScreen()));
+                  },
+                  child: Text("See All", style: TextStyle(color: primaryBlue))
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Column(
+            children: allDoctors
+                .where((doc) => double.parse(doc.rating) >= 4.8)
+                .take(2)
+                .map((doc) => _buildDoctorCard(context, doc))
+                .toList(),
+          ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
@@ -139,10 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 8))],
       ),
       child: _searchResults.isEmpty
-          ? const Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(child: Text("No specialists found.", style: TextStyle(color: Colors.grey))),
-      )
+          ? const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No specialists found.", style: TextStyle(color: Colors.grey))))
           : ListView.separated(
         shrinkWrap: true,
         padding: const EdgeInsets.all(10),
@@ -157,10 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
             trailing: Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
             onTap: () {
               _homeFocusNode.unfocus();
-              setState(() {
-                _homeSearchController.clear();
-                _searchResults = [];
-              });
+              setState(() { _homeSearchController.clear(); _searchResults = []; });
               Navigator.push(context, MaterialPageRoute(builder: (_) => DoctorDetails(doctor: doctor)));
             },
           );
@@ -290,129 +313,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ])),
           Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Row(children: [const Icon(Icons.star, color: Colors.amber, size: 14), const SizedBox(width: 4), Text(doctor.rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))])),
         ]),
-      ),
-    );
-  }
-}
-
-class DoctorsListScreen extends StatefulWidget {
-  const DoctorsListScreen({super.key});
-
-  @override
-  State<DoctorsListScreen> createState() => _DoctorsListScreenState();
-}
-
-class _DoctorsListScreenState extends State<DoctorsListScreen> {
-  final TextEditingController _listSearchController = TextEditingController();
-  final FocusNode _listFocusNode = FocusNode();
-  List<Doctor> filteredList = List.from(allDoctors);
-
-  @override
-  void dispose() {
-    _listSearchController.dispose();
-    _listFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _filterList(String query) {
-    setState(() {
-      filteredList = allDoctors.where((doc) {
-        final input = query.toLowerCase();
-        return doc.name.toLowerCase().contains(input) ||
-            doc.specialty.toLowerCase().contains(input) ||
-            doc.district.toLowerCase().contains(input);
-      }).toList();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _listFocusNode.unfocus(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          title: const Text("Certified Specialists", style: TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1E293B),
-          elevation: 0,
-          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)]),
-                child: TextField(
-                  controller: _listSearchController,
-                  focusNode: _listFocusNode,
-                  onChanged: _filterList,
-                  decoration: InputDecoration(
-                    hintText: "Search doctor, district, or specialty...",
-                    border: InputBorder.none,
-                    icon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _listSearchController.text.isNotEmpty
-                        ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _listFocusNode.unfocus();
-                          setState(() { _listSearchController.clear(); _filterList(""); });
-                        })
-                        : null,
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: filteredList.isEmpty
-                  ? const Center(child: Text("No specialists found."))
-                  : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: filteredList.length,
-                itemBuilder: (context, index) {
-                  final doctor = filteredList[index];
-                  return _buildDoctorListItem(context, doctor);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDoctorListItem(BuildContext context, Doctor doctor) {
-    return GestureDetector(
-      onTap: () {
-        _listFocusNode.unfocus();
-        Navigator.push(context, MaterialPageRoute(builder: (_) => DoctorDetails(doctor: doctor)));
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade100)),
-        child: Row(
-          children: [
-            ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.asset(doctor.image, width: 70, height: 70, fit: BoxFit.cover)),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(doctor.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B))),
-                Text(doctor.specialty, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.location_on, color: Colors.blue, size: 14),
-                  const SizedBox(width: 4),
-                  Text("${doctor.district} • ${doctor.distance}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                ]),
-              ]),
-            ),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.amber.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: Row(children: [const Icon(Icons.star, color: Colors.amber, size: 14), const SizedBox(width: 4), Text(doctor.rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))])),
-          ],
-        ),
       ),
     );
   }
