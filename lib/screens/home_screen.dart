@@ -7,6 +7,7 @@ import 'chatbotScreen.dart';
 import 'profile_screen.dart';
 import 'doctor_data.dart';
 import 'doctors_list_screen.dart';
+import 'tips_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,12 +67,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        // ✅ Elegant "Hairline" Bottom Navigation
+        // Bottom Navigation
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border(
-              top: BorderSide(color: Colors.grey.shade200, width: 1), // Crisp hairline separator
+              top: BorderSide(color: Colors.grey.shade200, width: 1),
             ),
           ),
           child: BottomNavigationBar(
@@ -81,9 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedFontSize: 12,
             unselectedFontSize: 12,
             showUnselectedLabels: true,
-            elevation: 0, // Removed heavy shadow for elegance
+            elevation: 0,
             type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent, // Uses container color
+            backgroundColor: Colors.transparent,
             onTap: (index) {
               _homeFocusNode.unfocus();
               setState(() => _currentIndex = index);
@@ -271,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GridView.count(
       shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 4, mainAxisSpacing: 10, crossAxisSpacing: 10,
       children: [
-        _serviceItem(context, Icons.menu_book_outlined, "Tips", Colors.orange, null),
+        _serviceItem(context, Icons.menu_book_outlined, "Tips", Colors.orange, const TipsScreen(),),
         _serviceItem(context, Icons.location_on_outlined, "Nearby", Colors.blue, LocationScreen()),
         _serviceItem(context, Icons.monitor_heart_outlined, "Monitor", Colors.purple, null),
         _serviceItem(context, Icons.chat_bubble_outline, "AI Chat", Colors.green, ChatbotIntroApp()),
@@ -281,17 +282,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _serviceItem(BuildContext context, IconData icon, String label, Color color, Widget? screen) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         if (screen != null) {
           _homeFocusNode.unfocus();
           Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
         }
       },
-      child: Column(children: [
-        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 24)),
-        const SizedBox(height: 5),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textDark)),
-      ]),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 5),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textDark)),
+        ],
+      ),
     );
   }
 
