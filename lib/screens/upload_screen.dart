@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -15,6 +16,60 @@ class _UploadScreenState extends State<UploadScreen> {
   File? _imageFile;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
+
+  Future<String?> uploadImage(File imageFile) async {
+  try {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    final fileName =
+        "${user!.id}/${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+    final bytes = await imageFile.readAsBytes();
+
+    await Supabase.instance.client.storage
+        .from('Images')
+        .uploadBinary(fileName, bytes);
+
+    final imageUrl = Supabase.instance.client.storage
+        .from('Images')
+        .getPublicUrl(fileName);
+
+    return imageUrl;
+  } catch (e) {
+    print("❌ Upload error: $e"); // 🔥 مهم
+    _showSnackBar("Image upload failed");
+    return null;
+  }
+}
+
+Future<void> saveScan({
+  required String imageUrl,
+  required String prediction,
+  required double confidence,
+}) async {
+  try {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    if (user == null) {
+      print("❌ USER NULL");
+      _showSnackBar("User not logged in");
+      return;
+    }
+
+    await Supabase.instance.client.from('scans').insert({
+      'userid': user.id,
+      'image_url': imageUrl,
+      'prediction': prediction,
+      'confidence': confidence,
+      'date': DateTime.now().toIso8601String(),
+    });
+
+    print("✅ Scan saved");
+  } catch (e) {
+    print("❌ ERROR: $e");
+    _showSnackBar("Failed to save scan");
+  }
+}
 
   // Professional Medical Color Palette
   final Color primaryBlue = const Color(0xFF0056D2);
@@ -63,25 +118,41 @@ class _UploadScreenState extends State<UploadScreen> {
     }
   }
 
-  void _handleServerResponse(Map<String, dynamic> data) {
-    String status = data['status'];
+ void _handleServerResponse(Map<String, dynamic> data) async {
+  String status = data['status'];
 
-    if (status == "success") {
-      _showResultSheet(
-        title: "Analysis Complete",
-        disease: data['disease_name'],
-        confidence: data['confidence'].toString(),
-        isError: false,
-      );
-    } else {
-      _showResultSheet(
-        title: status == "invalid" ? "Object Not Recognized" : "Uncertain Analysis",
-        message: data['message'],
-        suggestion: data['suggestion'],
-        isError: true,
+  if (status == "success") {
+    final prediction = data['disease_name'];
+    final confidence = double.parse(data['confidence'].toString());
+
+    // 🔥 1. upload image 
+    final imageUrl = await uploadImage(_imageFile!);
+
+    if (imageUrl != null) {
+      // 🔥 2. storge in  database
+      await saveScan(
+        imageUrl: imageUrl,
+        prediction: prediction,
+        confidence: confidence,
       );
     }
+
+    _showResultSheet(
+      title: "Analysis Complete",
+      disease: prediction,
+      confidence: confidence.toString(),
+      isError: false,
+    );
+
+  } else {
+    _showResultSheet(
+      title: status == "invalid" ? "Object Not Recognized" : "Uncertain Analysis",
+      message: data['message'],
+      suggestion: data['suggestion'],
+      isError: true,
+    );
   }
+}
 
   void _showResultSheet({
     required String title,

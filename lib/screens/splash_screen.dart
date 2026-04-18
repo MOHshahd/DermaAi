@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,28 +36,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   void _handleNavigation() async {
-    // Show splash for 3.5 seconds
-    await Future.delayed(const Duration(milliseconds: 3500));
+  await Future.delayed(const Duration(milliseconds: 3500));
 
-    // Check Firebase Auth state
-    User? user = FirebaseAuth.instance.currentUser;
+  final user = Supabase.instance.client.auth.currentUser;
 
-    if (!mounted) return;
+  if (!mounted) return;
 
-    if (user != null) {
-      // User is already logged in -> Go to Home
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } else {
-      // New User -> Go to Onboarding
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-      );
-    }
+  if (user != null) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
+  } else {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+    );
   }
+}
 
   @override
   void dispose() {

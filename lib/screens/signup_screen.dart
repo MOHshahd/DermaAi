@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -24,51 +25,68 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final Color textDark = const Color(0xFF1E293B);
 
   Future<void> signUp() async {
-    if (email.text.isEmpty || password.text.isEmpty || name.text.isEmpty || phone.text.isEmpty) {
-      showMessage("Please fill all fields");
-      return;
+  if (email.text.isEmpty ||
+      password.text.isEmpty ||
+      name.text.isEmpty ||
+      phone.text.isEmpty) {
+    showMessage("Please fill all fields");
+    return;
+  }
+
+  if (password.text.length < 6) {
+    showMessage("Password must be at least 6 characters");
+    return;
+  }
+
+  setState(() => isLoading = true);
+
+  try {
+    final supabase = Supabase.instance.client;
+
+   final response = await supabase.auth.signUp(
+   email: email.text.trim(),
+   password: password.text.trim(),
+   );
+
+    final user = response.user;
+
+   if (user != null) {
+   await supabase.from('users').insert({
+    'userid': user.id,
+    'name': name.text.trim(),
+    'email': email.text.trim(),
+  });
+  await supabase.auth.signInWithPassword(
+    email: email.text.trim(),
+    password: password.text.trim(),
+  );
     }
 
-    if (password.text.length < 6) {
-      showMessage("Password must be at least 6 characters");
-      return;
-    }
-
-    setState(() => isLoading = true);
-
-    try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email.text.trim(),
-        password: password.text.trim(),
-      );
-      await userCredential.user?.updateDisplayName(name.text.trim());
       showMessage("Account created successfully ✅");
 
       if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-    } on FirebaseAuthException catch (e) {
-      String message = "Signup failed";
-      if (e.code == 'email-already-in-use') message = "This email is already registered";
-      else if (e.code == 'invalid-email') message = "Invalid email format";
-      else if (e.code == 'weak-password') message = "Password is too weak";
-
-      showMessage(message);
+    
+    } on AuthException catch (e) {
+    showMessage(e.message);
     } catch (e) {
-      showMessage("Something went wrong");
-    } finally {
-      if (mounted) setState(() => isLoading = false);
+    showMessage("Something went wrong");
     }
-  }
 
-  void showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-    );
+   if (mounted) setState(() => isLoading = false);
   }
-
+void showMessage(String msg) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(

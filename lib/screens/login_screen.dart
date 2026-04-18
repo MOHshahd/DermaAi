@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+//import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,37 +25,42 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color textDark = const Color(0xFF1E293B);
 
   Future<void> login() async {
-    if (email.text.isEmpty || password.text.isEmpty) {
-      showMessage("Please fill all fields");
+  if (email.text.isEmpty || password.text.isEmpty) {
+    showMessage("Please fill all fields");
+    return;
+  }
+
+  setState(() => isLoading = true);
+
+  try {
+    final response = await Supabase.instance.client.auth.signInWithPassword(
+      email: email.text.trim(),
+      password: password.text.trim(),
+    );
+
+    final user = response.user;
+
+    if (user == null) {
+      showMessage("Login failed");
       return;
     }
 
-    setState(() => isLoading = true);
+    // ✅ بس نتأكد إن المستخدم موجود في auth
+    // ❌ مفيش insert هنا خالص
 
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email.text.trim(),
-        password: password.text.trim(),
-      );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen()),
+    );
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } on FirebaseAuthException catch (e) {
-      String message = "Login failed";
-      if (e.code == 'user-not-found') message = "No account found with this email";
-      else if (e.code == 'wrong-password') message = "Incorrect password";
-      else if (e.code == 'invalid-email') message = "Invalid email format";
-
-      showMessage(message);
-    } catch (e) {
-      showMessage("Something went wrong");
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
+  } on AuthException catch (e) {
+    showMessage(e.message);
+  } catch (e) {
+    showMessage("Something went wrong");
   }
+
+  setState(() => isLoading = false);
+}
 
   void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -62,17 +69,21 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> resetPassword() async {
-    if (email.text.isEmpty) {
-      showMessage("Enter your email first");
-      return;
-    }
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email.text.trim());
-      showMessage("Password reset email sent 📧");
-    } catch (e) {
-      showMessage("Failed to send reset email");
-    }
+  if (email.text.isEmpty) {
+    showMessage("Enter your email first");
+    return;
   }
+
+  try {
+    await Supabase.instance.client.auth.resetPasswordForEmail(
+      email.text.trim(),
+    );
+
+    showMessage("Password reset email sent 📧");
+  } catch (e) {
+    showMessage("Failed to send reset email");
+  }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,5 @@
+import 'package:derma_ai/screens/allScans_Screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'scan_screen.dart';
 import 'location_screen.dart';
 import 'doctor_details.dart';
@@ -8,6 +8,7 @@ import 'profile_screen.dart';
 import 'doctor_data.dart';
 import 'doctors_list_screen.dart';
 import 'tips_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,8 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // State & Logic
   int _currentIndex = 0;
-  final User? user = FirebaseAuth.instance.currentUser;
-  final TextEditingController _homeSearchController = TextEditingController();
+  final user = Supabase.instance.client.auth.currentUser;  final TextEditingController _homeSearchController = TextEditingController();
   final FocusNode _homeFocusNode = FocusNode();
   List<Doctor> _searchResults = [];
 
@@ -194,8 +194,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    String displayName = user?.displayName ?? "User";
-    int hour = DateTime.now().hour;
+    String displayName =
+    user?.userMetadata?['name'] ??
+    user?.email ??
+    "User";    int hour = DateTime.now().hour;
     String greeting = (hour < 12) ? "Good Morning" : (hour < 17) ? "Good Afternoon" : "Good Evening";
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -274,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _serviceItem(context, Icons.menu_book_outlined, "Tips", Colors.orange, const TipsScreen(),),
         _serviceItem(context, Icons.location_on_outlined, "Nearby", Colors.blue, LocationScreen()),
-        _serviceItem(context, Icons.monitor_heart_outlined, "Monitor", Colors.purple, null),
+        _serviceItem(context, Icons.monitor_heart_outlined, "Monitor", Colors.purple, AllScansScreen()),
         _serviceItem(context, Icons.chat_bubble_outline, "AI Chat", Colors.green, ChatbotIntroApp()),
       ],
     );
