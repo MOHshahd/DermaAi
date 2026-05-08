@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'scan_history_screen.dart';
+import 'privacy_security_page.dart';
+import 'help_support_page.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -64,13 +66,13 @@ class ProfileScreen extends StatelessWidget {
           _buildMenuTile(Icons.security, "Privacy & Security", () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => LoginScreen()),
+              MaterialPageRoute(builder: (_) => PrivacySecurityPage()),
             );
           }),
           _buildMenuTile(Icons.help_outline, "Help & Support", () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ScanHistoryScreen()),
+              MaterialPageRoute(builder: (_) => HelpSupportPage()),
             );
           }),
 
