@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -18,6 +18,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool isPasswordHidden = true;
   bool isLoading = false;
+  String fullPhone = "";
 
   // Medical Theme Colors (Consistent with Login/Home)
   final Color primaryBlue = const Color(0xFF0056D2);
@@ -25,44 +26,57 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final Color textDark = const Color(0xFF1E293B);
 
   Future<void> signUp() async {
-  if (email.text.isEmpty ||
-      password.text.isEmpty ||
-      name.text.isEmpty ||
-      phone.text.isEmpty) {
-    showMessage("Please fill all fields");
-    return;
-  }
-
-  if (password.text.length < 6) {
-    showMessage("Password must be at least 6 characters");
-    return;
-  }
-
-  setState(() => isLoading = true);
-
-  try {
-    final supabase = Supabase.instance.client;
-
-   final response = await supabase.auth.signUp(
-   email: email.text.trim(),
-   password: password.text.trim(),
-   );
-
-    final user = response.user;
-
-   if (user != null) {
-   await supabase.from('users').insert({
-    'userid': user.id,
-    'name': name.text.trim(),
-    'email': email.text.trim(),
-  });
-  await supabase.auth.signInWithPassword(
-    email: email.text.trim(),
-    password: password.text.trim(),
-  );
+    if (email.text.isEmpty ||
+        password.text.isEmpty ||
+        name.text.isEmpty ||
+        fullPhone.isEmpty) {
+      showMessage("Please fill all fields");
+      return;
     }
 
-      showMessage("Account created successfully ✅");
+    if (password.text.length < 6) {
+      showMessage("Password must be at least 6 characters");
+      return;
+    }
+    final nameRegex = RegExp(r'^[a-zA-Z\s]+$');
+
+    if (!nameRegex.hasMatch(name.text.trim())) {
+      showMessage("Name must contain letters only");
+      return;
+    }
+    // Email validation
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    if (!emailRegex.hasMatch(email.text.trim())) {
+      showMessage("Enter a valid email address");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      final response = await supabase.auth.signUp(
+        email: email.text.trim(),
+        password: password.text.trim(),
+        emailRedirectTo: 'https://dermaai2025-cell.github.io/email-confirm-page/success.html',
+      );
+
+      final user = response.user;
+
+      if (user != null) {
+        await supabase.from('users').insert({
+          'userid': user.id,
+          'name': name.text.trim(),
+          'email': email.text.trim(),
+          'phone': fullPhone,
+        });
+      }
+
+      showMessage("Check your email to confirm your account 📩");
+      
 
       if (!mounted) return;
 
@@ -70,23 +84,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-    
     } on AuthException catch (e) {
-    showMessage(e.message);
+      showMessage(e.message);
     } catch (e) {
-    showMessage("Something went wrong");
+      showMessage("Something went wrong");
     }
 
-   if (mounted) setState(() => isLoading = false);
+    if (mounted) setState(() => isLoading = false);
   }
-void showMessage(String msg) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
-}
+
+  void showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,7 +119,11 @@ void showMessage(String msg) {
                     color: primaryBlue.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.person_add_outlined, size: 50, color: primaryBlue),
+                  child: Icon(
+                    Icons.person_add_outlined,
+                    size: 50,
+                    color: primaryBlue,
+                  ),
                 ),
               ),
 
@@ -115,7 +131,11 @@ void showMessage(String msg) {
 
               Text(
                 "Create Account",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: textDark),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -135,11 +155,30 @@ void showMessage(String msg) {
               const SizedBox(height: 16),
 
               // Phone Number Field
-              _buildTextField(
+              IntlPhoneField(
                 controller: phone,
-                label: "Phone Number",
-                icon: Icons.phone_android_outlined,
-                keyboardType: TextInputType.phone,
+                initialCountryCode: 'EG',
+                decoration: InputDecoration(
+                  labelText: "Phone Number",
+                  prefixIcon: Icon(
+                    Icons.phone_android_outlined,
+                    color: primaryBlue,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                ),
+                onChanged: (phoneNumber) {
+                  print(phoneNumber.completeNumber);
+                  fullPhone = phoneNumber.completeNumber;
+                },
               ),
 
               const SizedBox(height: 16),
@@ -165,10 +204,13 @@ void showMessage(String msg) {
                   fillColor: Colors.white,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      isPasswordHidden ? Icons.visibility_off : Icons.visibility,
+                      isPasswordHidden
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Colors.grey,
                     ),
-                    onPressed: () => setState(() => isPasswordHidden = !isPasswordHidden),
+                    onPressed: () =>
+                        setState(() => isPasswordHidden = !isPasswordHidden),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(15),
@@ -191,15 +233,21 @@ void showMessage(String msg) {
                   onPressed: isLoading ? null : signUp,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryBlue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     elevation: 2,
                   ),
                   child: isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    "SIGN UP",
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                          "SIGN UP",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
@@ -209,12 +257,18 @@ void showMessage(String msg) {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Already have an account?", style: TextStyle(color: Colors.grey[600])),
+                  Text(
+                    "Already have an account?",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       "Sign in",
-                      style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: primaryBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

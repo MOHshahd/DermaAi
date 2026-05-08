@@ -1,5 +1,5 @@
+import 'package:derma_ai/screens/ResetPasswod_Screen.dart';
 import 'package:flutter/material.dart';
-//import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,8 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // ✅ بس نتأكد إن المستخدم موجود في auth
-    // ❌ مفيش insert هنا خالص
+    // ✅ Just make sure the user is in auth
 
     Navigator.pushReplacement(
       context,
@@ -77,12 +76,16 @@ class _LoginScreenState extends State<LoginScreen> {
   try {
     await Supabase.instance.client.auth.resetPasswordForEmail(
       email.text.trim(),
+      redirectTo: 'https://dermaai2025-cell.github.io/email-confirm-page/reset.html',
+      
     );
 
     showMessage("Password reset email sent 📧");
   } catch (e) {
     showMessage("Failed to send reset email");
   }
+
+    
 }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'scan_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -13,7 +14,10 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("My Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "My Profile",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -35,9 +39,15 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 15),
                 Text(
                   user?.email ?? "User Email",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const Text("Patient Account", style: TextStyle(color: Colors.grey)),
+                const Text(
+                  "Patient Account",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -45,9 +55,24 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 40),
 
           // 2. Menu Options
-          _buildMenuTile(Icons.history, "Scan History"),
-          _buildMenuTile(Icons.security, "Privacy & Security"),
-          _buildMenuTile(Icons.help_outline, "Help & Support"),
+          _buildMenuTile(Icons.history, "Scan History", () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ScanHistoryScreen()),
+            );
+          }),
+          _buildMenuTile(Icons.security, "Privacy & Security", () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => LoginScreen()),
+            );
+          }),
+          _buildMenuTile(Icons.help_outline, "Help & Support", () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ScanHistoryScreen()),
+            );
+          }),
 
           const Spacer(),
 
@@ -61,11 +86,16 @@ class ProfileScreen extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
                 onPressed: () => _showLogoutDialog(context),
                 icon: const Icon(Icons.logout),
-                label: const Text("LOGOUT", style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  "LOGOUT",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -75,12 +105,16 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuTile(IconData icon, String title) {
+  Widget _buildMenuTile(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.grey),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-      onTap: () {},
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey,
+      ),
+      onTap: onTap,
     );
   }
 
@@ -91,17 +125,20 @@ class ProfileScreen extends StatelessWidget {
         title: const Text("Logout"),
         content: const Text("Are you sure you want to exit?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           TextButton(
-              onPressed: () async {
-                await Supabase.instance.client.auth.signOut();
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false
-                );
-              },
-              child: const Text("Logout", style: TextStyle(color: Colors.red))
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

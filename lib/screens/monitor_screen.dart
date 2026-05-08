@@ -38,6 +38,20 @@ class _MonitorScreenState extends State<MonitorScreen> {
     }
   }
 
+  String safeText(dynamic value) {
+    if (value == null) return "Unknown error";
+
+    if (value is String) return value;
+
+    if (value is Map) {
+      return value['message']?.toString() ??
+          value['error']?.toString() ??
+          value.toString();
+    }
+
+    return value.toString();
+  }
+
   // 🔥 MAIN FUNCTION
   Future processMonitor() async {
     if (newImage == null) {
@@ -61,12 +75,12 @@ class _MonitorScreenState extends State<MonitorScreen> {
 
       await supabase.storage.from('Images').upload(fileName, newImage!);
 
-      final newImageUrl =
-          supabase.storage.from('Images').getPublicUrl(fileName);
+      final newImageUrl = supabase.storage
+          .from('Images')
+          .getPublicUrl(fileName);
 
       // 🤖 2) Call compare API (JSON)
-      const url =
-          "https://rf3t-skin-disease-backend.hf.space/compare";
+      const url = "https://rf3t-skin-disease-backend.hf.space/compare";
 
       final response = await http.post(
         Uri.parse(url),
@@ -77,11 +91,35 @@ class _MonitorScreenState extends State<MonitorScreen> {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      // final data = jsonDecode(response.body);
+      Map<String, dynamic> data = {};
 
-      if (data['error'] != null || data['status'] == "error") {
+      try {
+        data = jsonDecode(response.body);
+      } catch (e) {
         setState(() {
-          result = data['message'] ?? "Server Error";
+          result = "Invalid server response";
+        });
+        return;
+      }
+
+      // if (data['error'] != null || data['status'] == "error") {
+      //   setState(() {
+      //     result = data['message'] ?? "Server Error";
+      //   });
+      //   return;
+      // }
+      if (response.statusCode != 200) {
+        setState(() {
+          result = safeText(data['detail'] ?? data['message'] ?? data['error']);
+        });
+
+        setState(() => isLoading = false);
+        return;
+      }
+      if (data['status'] == 'error') {
+        setState(() {
+          result = safeText(data['detail'] ?? data['message'] ?? data['error']);
         });
         return;
       }
@@ -101,8 +139,15 @@ class _MonitorScreenState extends State<MonitorScreen> {
 
       // ✅ Show result
       setState(() {
-        result =
-            "Result: ${data['result']}\nSimilarity: ${data['similarity']}";
+        // result = "Result: ${data['result']}\nSimilarity: ${data['similarity']}";
+        if (response.statusCode == 200 && data.containsKey('similarity')) {
+          result =
+              "Result: ${safeText(data['result'])}\nSimilarity: ${data['similarity']}";
+        } else {
+          result = result = safeText(
+            data['detail'] ?? data['message'] ?? data['error'],
+          );
+        }
       });
     } catch (e) {
       setState(() => result = "Error: $e");
@@ -122,10 +167,11 @@ class _MonitorScreenState extends State<MonitorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-
             // 🟤 OLD IMAGE
-            const Text("Previous Scan",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Previous Scan",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
 
             const SizedBox(height: 10),
 
@@ -138,8 +184,10 @@ class _MonitorScreenState extends State<MonitorScreen> {
             const SizedBox(height: 20),
 
             // 🆕 NEW IMAGE
-            const Text("New Image",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "New Image",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
 
             const SizedBox(height: 10),
 
@@ -189,10 +237,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
             Text(
               result,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),

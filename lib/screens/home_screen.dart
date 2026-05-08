@@ -9,6 +9,7 @@ import 'doctor_data.dart';
 import 'doctors_list_screen.dart';
 import 'tips_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'scan_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHomeContent(),
               const Center(child: Text("Bookings Screen", style: TextStyle(color: Colors.grey))),
-              const Center(child: Text("History Screen", style: TextStyle(color: Colors.grey))),
+              ScanHistoryScreen(),
             ],
           ),
         ),

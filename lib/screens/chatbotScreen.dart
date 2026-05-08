@@ -1,3 +1,4 @@
+import 'chatbot_main_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 
@@ -20,7 +21,7 @@ class ChatbotIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFDFD), // Background color
+      backgroundColor: const Color(0xFFFDFDFD),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -33,28 +34,28 @@ class ChatbotIntroScreen extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.blueGrey),
-                  onPressed: (){
+                  onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>HomeScreen() ,
-                      ),
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
-                  }
+                  },
                 ),
               ),
+
               const SizedBox(height: 30),
 
               /// Robot Image
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    "assets/robo.jpeg", // ضع الصورة هنا
+                    "assets/robo.jpeg",
                     width: 400,
                     height: 400,
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               /// Title
@@ -67,6 +68,7 @@ class ChatbotIntroScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
+
               const SizedBox(height: 10),
 
               /// Description
@@ -75,6 +77,7 @@ class ChatbotIntroScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
+
               const SizedBox(height: 30),
 
               /// Continue Button
@@ -83,10 +86,17 @@ class ChatbotIntroScreen extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Add navigation to next screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatMainScreen(
+                          userId: "user_123", // ✅ عدلنا هنا
+                        ),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff5D8AA8), // Blue-grey
+                    backgroundColor: const Color(0xff5D8AA8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -97,6 +107,7 @@ class ChatbotIntroScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 40),
             ],
           ),
@@ -105,3 +116,4 @@ class ChatbotIntroScreen extends StatelessWidget {
     );
   }
 }
+
